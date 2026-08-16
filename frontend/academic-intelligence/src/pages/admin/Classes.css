@@ -1,0 +1,179 @@
+.classes-page {
+  min-height: 100vh;
+  padding: 48px;
+  background: #f7f5ef;
+  color: #171717;
+}
+
+/* Header */
+
+.classes-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 36px;
+}
+
+.classes-eyebrow {
+  margin: 0 0 10px;
+
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 2px;
+
+  color: #777168;
+}
+
+.classes-header h1 {
+  margin: 0;
+
+  font-size: 42px;
+  font-weight: 500;
+  letter-spacing: -1.5px;
+}
+
+.classes-description {
+  margin: 10px 0 0;
+
+  color: #777168;
+  font-size: 15px;
+}
+
+
+/* Add button */
+
+.add-class-btn {
+  border: none;
+  border-radius: 9px;
+
+  padding: 13px 20px;
+
+  background: #171717;
+  color: #ffffff;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition: background 0.2s ease;
+}
+
+.add-class-btn:hover {
+  background: #2b2b2b;
+}
+
+
+/* Card */
+
+.classes-card {
+  overflow: hidden;
+
+  background: #ffffff;
+
+  border: 1px solid #dedbd4;
+  border-radius: 14px;
+}
+
+
+/* Table header */
+
+.classes-table-header {
+  display: grid;
+
+  grid-template-columns:
+    2fr
+    1.5fr
+    1.5fr
+    1fr;
+
+  padding: 18px 24px;
+
+  background: #faf9f6;
+
+  border-bottom: 1px solid #e5e1d9;
+
+  color: #777168;
+
+  font-size: 12px;
+  font-weight: 600;
+
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+
+/* Empty state */
+
+.empty-classes {
+  min-height: 360px;
+
+  display: flex;
+  flex-direction: column;
+
+  justify-content: center;
+  align-items: center;
+
+  text-align: center;
+}
+
+.empty-class-icon {
+  width: 52px;
+  height: 52px;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  border-radius: 12px;
+
+  background: #f1eee7;
+
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.empty-classes h3 {
+  margin: 18px 0 6px;
+
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.empty-classes p {
+  margin: 0;
+
+  color: #888278;
+
+  font-size: 14px;
+}
+
+
+/* Mobile */
+
+@media (max-width: 700px) {
+
+  .classes-page {
+    padding: 28px 20px;
+  }
+
+  .classes-header {
+    flex-direction: column;
+    align-items: flex-start;
+
+    gap: 20px;
+  }
+
+  .classes-header h1 {
+    font-size: 34px;
+  }
+
+  .add-class-btn {
+    width: 100%;
+  }
+
+  .classes-table-header {
+    display: none;
+  }
+
+}
