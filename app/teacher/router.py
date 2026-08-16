@@ -18,6 +18,7 @@ from app.models.student import Student
 from app.models.submission import Submission
 from app.models.teacher import Teacher
 from app.models.user import User
+from app.performance.service import update_performance_record
 
 
 router = APIRouter(prefix="/teacher", tags=["teacher"])
@@ -122,6 +123,10 @@ class AttendanceResponse(BaseModel):
 class CreateExamResultRequest(BaseModel):
     student_id: UUID
     exam_id: UUID
+    marks: Decimal = Field(ge=0)
+
+
+class UpdateExamResultRequest(BaseModel):
     marks: Decimal = Field(ge=0)
 
 
@@ -287,9 +292,15 @@ def grade_submission(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You do not manage this submission",
             )
+        if grade_data.marks > assignment.max_marks:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Marks cannot exceed the assignment maximum",
+            )
 
         submission.marks = grade_data.marks
         submission.feedback = grade_data.feedback
+        update_performance_record(db, submission.student_id, assignment.course_id)
         db.commit()
         db.refresh(submission)
         return SubmissionResponse.model_validate(submission)
@@ -403,6 +414,11 @@ def create_attendance(
             status=attendance_data.status,
         )
         db.add(attendance)
+        update_performance_record(
+            db,
+            attendance_data.student_id,
+            attendance_data.course_id,
+        )
         db.commit()
         db.refresh(attendance)
         return AttendanceResponse.model_validate(attendance)
@@ -466,6 +482,23 @@ def create_exam_result(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You do not manage this exam",
             )
+        if result_data.marks > exam.max_marks:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Marks cannot exceed the exam maximum",
+            )
+
+        enrollment = db.scalar(
+            select(Enrollment).where(
+                Enrollment.student_id == result_data.student_id,
+                Enrollment.course_id == exam.course_id,
+            )
+        )
+        if enrollment is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Student is not enrolled in this exam's course",
+            )
 
         existing_result = db.scalar(
             select(ExamResult).where(
@@ -485,6 +518,49 @@ def create_exam_result(
             marks=result_data.marks,
         )
         db.add(result)
+        update_performance_record(db, result.student_id, exam.course_id)
+        db.commit()
+        db.refresh(result)
+        return ExamResultResponse.model_validate(result)
+    finally:
+        db.close()
+
+
+@router.put("/results/{result_id}", response_model=ExamResultResponse)
+def update_exam_result(
+    result_id: UUID,
+    result_data: UpdateExamResultRequest,
+    current_user: User = Depends(require_roles("TEACHER")),
+) -> ExamResultResponse:
+    db = SessionLocal()
+    try:
+        teacher = _get_teacher(db, current_user)
+        result = db.get(ExamResult, result_id)
+        if result is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Exam result not found",
+            )
+
+        exam = db.get(Exam, result.exam_id)
+        if exam is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Exam not found",
+            )
+        if exam.teacher_id != teacher.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not manage this exam",
+            )
+        if result_data.marks > exam.max_marks:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Marks cannot exceed the exam maximum",
+            )
+
+        result.marks = result_data.marks
+        update_performance_record(db, result.student_id, exam.course_id)
         db.commit()
         db.refresh(result)
         return ExamResultResponse.model_validate(result)
