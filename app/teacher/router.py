@@ -231,10 +231,18 @@ def create_assignment(
     db = SessionLocal()
     try:
         teacher = _get_teacher(db, current_user)
-        if db.get(Course, assignment_data.course_id) is None:
+
+        course = db.get(Course, assignment_data.course_id)
+        if course is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Course not found",
+            )
+
+        if not _teacher_manages_course(db, teacher, assignment_data.course_id):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not manage this course",
             )
 
         assignment = Assignment(
@@ -245,9 +253,11 @@ def create_assignment(
             due_date=assignment_data.due_date,
             max_marks=assignment_data.max_marks,
         )
+
         db.add(assignment)
         db.commit()
         db.refresh(assignment)
+
         return AssignmentResponse.model_validate(assignment)
     finally:
         db.close()
@@ -320,7 +330,6 @@ def get_teacher_exams(
     finally:
         db.close()
 
-
 @router.post(
     "/exams",
     response_model=ExamResponse,
@@ -333,10 +342,18 @@ def create_exam(
     db = SessionLocal()
     try:
         teacher = _get_teacher(db, current_user)
-        if db.get(Course, exam_data.course_id) is None:
+
+        course = db.get(Course, exam_data.course_id)
+        if course is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Course not found",
+            )
+
+        if not _teacher_manages_course(db, teacher, exam_data.course_id):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not manage this course",
             )
 
         exam = Exam(
@@ -346,9 +363,11 @@ def create_exam(
             exam_date=exam_data.exam_date,
             max_marks=exam_data.max_marks,
         )
+
         db.add(exam)
         db.commit()
         db.refresh(exam)
+
         return ExamResponse.model_validate(exam)
     finally:
         db.close()
